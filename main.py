@@ -22,12 +22,18 @@ class TestTimeout(AddOn):
 
     def rerun_addon(self, documents):
         """Re-run the add on with the same parameters with the remaining documents"""
+        document_ids = [d.id for d in documents]
+        if len(document_ids) >= self.get_document_count():
+            self.set_message("No progress was made, not re-running")
+            print("No progress was made, not re-running")
+            return
+
         self.client.post(
             "addon_runs/",
             json={
                 "addon": self.addon_id,
                 "parameters": self.data,
-                "documents": [d.id for d in documents],
+                "documents": document_ids,
             },
         )
 
@@ -39,14 +45,18 @@ class TestTimeout(AddOn):
         elif self.query:
             documents = self.client.documents.search(self.query)
 
+        # turn documents into an iterator, so that documents that get yielded are
+        # consumed and not re-used when we rerun
+        documents = iter(documents)
         for document in documents:
+            yield document
             if self.soft_timeout():
                 self.rerun_addon(documents)
+                print("soft time out")
                 self.set_message(
                     "Soft time out, continuing rest of documents in a new run"
                 )
                 break
-            yield document
 
     def soft_timeout(self):
         return time.time() - self._start > self.soft_time_limit
