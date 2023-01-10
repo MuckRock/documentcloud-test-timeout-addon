@@ -7,7 +7,7 @@ import time
 from documentcloud.addon import SoftTimeOutAddOn
 
 
-class TestTimeout(AddOn):
+class TestTimeout(SoftTimeOutAddOn):
     """An example Add-On for DocumentCloud."""
 
     soft_time_limit = 10
